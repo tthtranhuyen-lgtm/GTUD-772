@@ -88,54 +88,75 @@ export const FullNamePracticeRow: React.FC<FullNamePracticeRowProps> = ({ studen
   }, [chars, showGuides, clearTrigger]);
 
   const handlePointerDown = (idx: number, e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     isDrawingMap.current[idx] = true;
     setActiveCharIndex(idx);
 
     const canvas = canvasRefs.current[idx];
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
     const scale = boxSize / rect.width;
 
     let cx = 0, cy = 0;
     if ('touches' in e) {
-      if (e.touches.length === 0) return;
-      cx = e.touches[0].clientX;
-      cy = e.touches[0].clientY;
+      const touch = e.touches[0] || ('changedTouches' in e ? e.changedTouches[0] : null);
+      if (!touch) return;
+      cx = touch.clientX;
+      cy = touch.clientY;
     } else {
       cx = e.clientX;
       cy = e.clientY;
     }
+
+    if (isNaN(cx) || isNaN(cy)) return;
 
     const point = { x: (cx - rect.left) * scale, y: (cy - rect.top) * scale };
     if (!strokeHistoryMap.current[idx]) strokeHistoryMap.current[idx] = [];
     strokeHistoryMap.current[idx].push([point]);
+
+    // Draw single initial dot
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.save();
+      ctx.fillStyle = '#18181B';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
   };
 
   const handlePointerMove = (idx: number, e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawingMap.current[idx]) return;
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
 
     const canvas = canvasRefs.current[idx];
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
     const scale = boxSize / rect.width;
 
     let cx = 0, cy = 0;
     if ('touches' in e) {
-      if (e.touches.length === 0) return;
-      cx = e.touches[0].clientX;
-      cy = e.touches[0].clientY;
+      const touch = e.touches[0] || ('changedTouches' in e ? e.changedTouches[0] : null);
+      if (!touch) return;
+      cx = touch.clientX;
+      cy = touch.clientY;
     } else {
       cx = e.clientX;
       cy = e.clientY;
     }
+
+    if (isNaN(cx) || isNaN(cy)) return;
 
     const point = { x: (cx - rect.left) * scale, y: (cy - rect.top) * scale };
     const strokes = strokeHistoryMap.current[idx];
     if (strokes && strokes.length > 0) {
       const currentStroke = strokes[strokes.length - 1];
+      if (!currentStroke || currentStroke.length === 0) return;
       const prevPoint = currentStroke[currentStroke.length - 1];
+      if (!prevPoint) return;
       currentStroke.push(point);
 
       // Fast incremental draw
@@ -154,7 +175,7 @@ export const FullNamePracticeRow: React.FC<FullNamePracticeRowProps> = ({ studen
   };
 
   const handlePointerUp = (idx: number, e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     isDrawingMap.current[idx] = false;
   };
 

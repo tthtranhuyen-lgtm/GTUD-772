@@ -1,14 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { 
   RotateCcw, 
-  Trash2, 
   Download, 
   Eye, 
   EyeOff, 
   Grid, 
   Brush, 
   PenTool, 
-  Check, 
   Undo2,
   Redo2,
   Sparkles
@@ -51,10 +49,13 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Canvas drawing state
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef<boolean>(false);
+  const currentStrokeRef = useRef<Stroke | null>(null);
+  const lastPointRef = useRef<Point | null>(null);
+
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [redoStrokes, setRedoStrokes] = useState<Stroke[]>([]);
-  const currentStrokeRef = useRef<Stroke | null>(null);
+  const [hasDrawnNotice, setHasDrawnNotice] = useState<boolean>(false);
 
   // Settings
   const [gridType, setGridType] = useState<'mige' | 'tianzige' | 'none'>('mige');
@@ -64,7 +65,6 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
   const [brushSize, setBrushSize] = useState<number>(8);
   const [brushColor, setBrushColor] = useState<string>('#18181B'); // Chinese ink black
   const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 440, height: 440 });
-  const [hasDrawnNotice, setHasDrawnNotice] = useState<boolean>(false);
 
   const colors = [
     { label: 'Mực Tàu', value: '#18181B', bg: 'bg-[#18181B]' },
@@ -76,12 +76,15 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
   // Adjust canvas size to parent container
   useEffect(() => {
     const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        // Keep it square and responsive
-        const minSide = Math.min(rect.width - 32, 460);
-        const side = Math.max(minSide, 280);
-        setCanvasDimensions({ width: side, height: side });
+      try {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const minSide = Math.min(rect.width - 32, 460);
+          const side = Math.max(minSide, 280);
+          setCanvasDimensions({ width: side, height: side });
+        }
+      } catch (e) {
+        console.warn('Canvas resize error', e);
       }
     };
 
@@ -90,190 +93,267 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Redraw canvas whenever strokes, grid, or watermark settings change
+  // Redraw canvas background, grid, trace watermark, and completed strokes
   const redraw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    const { width, height } = canvasDimensions;
-    ctx.clearRect(0, 0, width, height);
+      const { width, height } = canvasDimensions;
+      ctx.clearRect(0, 0, width, height);
 
-    // 1. Draw Paper Background
-    ctx.fillStyle = '#FCFAF6';
-    ctx.fillRect(0, 0, width, height);
+      // 1. Draw Paper Background
+      ctx.fillStyle = '#FCFAF6';
+      ctx.fillRect(0, 0, width, height);
 
-    // 2. Draw Grid (Mige / Tianzige)
-    if (gridType !== 'none') {
-      ctx.save();
-      const padding = 12;
-      const boxSize = width - padding * 2;
-      const x0 = padding;
-      const y0 = padding;
-      const x1 = width - padding;
-      const y1 = height - padding;
-      const midX = width / 2;
-      const midY = height / 2;
+      // 2. Draw Grid (Mige / Tianzige)
+      if (gridType !== 'none') {
+        ctx.save();
+        const padding = 12;
+        const boxSize = width - padding * 2;
+        const x0 = padding;
+        const y0 = padding;
+        const x1 = width - padding;
+        const y1 = height - padding;
+        const midX = width / 2;
+        const midY = height / 2;
 
-      // Outer border (Solid red-ochre)
-      ctx.strokeStyle = '#DC2626';
-      ctx.lineWidth = 2.5;
-      ctx.strokeRect(x0, y0, boxSize, boxSize);
+        // Outer border (Solid red-ochre)
+        ctx.strokeStyle = '#DC2626';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(x0, y0, boxSize, boxSize);
 
-      // Inner thin grid
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = 'rgba(220, 38, 38, 0.45)';
+        // Inner thin grid
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = 'rgba(220, 38, 38, 0.45)';
 
-      // Crosshairs (+ center)
-      ctx.beginPath();
-      ctx.moveTo(midX, y0);
-      ctx.lineTo(midX, y1);
-      ctx.moveTo(x0, midY);
-      ctx.lineTo(x1, midY);
-      ctx.stroke();
-
-      // Diagonals (X center for Mige)
-      if (gridType === 'mige') {
+        // Crosshairs (+ center)
         ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.moveTo(x1, y0);
-        ctx.lineTo(x0, y1);
+        ctx.moveTo(midX, y0);
+        ctx.lineTo(midX, y1);
+        ctx.moveTo(x0, midY);
+        ctx.lineTo(x1, midY);
         ctx.stroke();
-      }
 
-      ctx.restore();
-    }
-
-    // 3. Draw Watermark Character (Trace Guide)
-    if (showWatermark && char) {
-      ctx.save();
-      ctx.font = `600 ${Math.floor(width * 0.72)}px "Noto Serif SC", "Songti SC", "SimSun", serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = `rgba(185, 28, 28, ${watermarkOpacity})`;
-      ctx.fillText(char, width / 2, height / 2 + (width * 0.04));
-      ctx.restore();
-    }
-
-    // 4. Draw User Strokes
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    strokes.forEach(stroke => {
-      if (stroke.points.length === 0) return;
-      ctx.save();
-      ctx.strokeStyle = stroke.color;
-      ctx.fillStyle = stroke.color;
-
-      if (stroke.brushType === 'ink' || stroke.points.length === 1) {
-        // Uniform ink stroke
-        ctx.lineWidth = stroke.size;
-        ctx.beginPath();
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-        for (let i = 1; i < stroke.points.length; i++) {
-          ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
-        }
-        ctx.stroke();
-      } else {
-        // Calligraphy brush simulation with dynamic width interpolation
-        for (let i = 1; i < stroke.points.length; i++) {
-          const p1 = stroke.points[i - 1];
-          const p2 = stroke.points[i];
-          const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-          const time = Math.max(p2.time - p1.time, 1);
-          const speed = dist / time;
-
-          // Faster stroke = thinner; slower stroke = thicker ink deposit
-          const dynamicSize = Math.max(stroke.size * 0.45, Math.min(stroke.size * 1.5, stroke.size * (1.1 - speed * 0.3)));
-
-          ctx.lineWidth = dynamicSize;
+        // Diagonals (X center for Mige)
+        if (gridType === 'mige') {
           ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
+          ctx.moveTo(x1, y0);
+          ctx.lineTo(x0, y1);
           ctx.stroke();
         }
+
+        ctx.restore();
       }
-      ctx.restore();
-    });
+
+      // 3. Draw Watermark Character (Trace Guide)
+      if (showWatermark && char) {
+        ctx.save();
+        ctx.font = `600 ${Math.floor(width * 0.72)}px "Noto Serif SC", "Songti SC", "SimSun", serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = `rgba(185, 28, 28, ${watermarkOpacity})`;
+        ctx.fillText(char, width / 2, height / 2 + (width * 0.04));
+        ctx.restore();
+      }
+
+      // 4. Draw User Strokes safely
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      strokes.forEach(stroke => {
+        if (!stroke || !Array.isArray(stroke.points) || stroke.points.length === 0) return;
+        ctx.save();
+        ctx.strokeStyle = stroke.color || '#18181B';
+        ctx.fillStyle = stroke.color || '#18181B';
+
+        if (stroke.points.length === 1) {
+          ctx.beginPath();
+          ctx.arc(stroke.points[0].x, stroke.points[0].y, (stroke.size || 8) / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (stroke.brushType === 'ink') {
+          ctx.lineWidth = stroke.size || 8;
+          ctx.beginPath();
+          ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+          for (let i = 1; i < stroke.points.length; i++) {
+            const p = stroke.points[i];
+            if (p) ctx.lineTo(p.x, p.y);
+          }
+          ctx.stroke();
+        } else {
+          // Dynamic calligraphy stroke
+          for (let i = 1; i < stroke.points.length; i++) {
+            const p1 = stroke.points[i - 1];
+            const p2 = stroke.points[i];
+            if (!p1 || !p2) continue;
+
+            const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            const time = Math.max(p2.time - p1.time, 1);
+            const speed = dist / time;
+
+            const baseSize = stroke.size || 8;
+            const dynamicSize = Math.max(baseSize * 0.45, Math.min(baseSize * 1.5, baseSize * (1.1 - speed * 0.3)));
+
+            ctx.lineWidth = dynamicSize;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      });
+    } catch (err) {
+      console.error('Error drawing canvas:', err);
+    }
   }, [canvasDimensions, gridType, showWatermark, watermarkOpacity, char, strokes]);
 
   useEffect(() => {
     redraw();
   }, [redraw]);
 
-  // When changing character, optionally clear or keep canvas
+  // When changing character, reset canvas state safely
   useEffect(() => {
     setStrokes([]);
     setRedoStrokes([]);
     setHasDrawnNotice(false);
+    isDrawingRef.current = false;
+    currentStrokeRef.current = null;
+    lastPointRef.current = null;
   }, [char]);
 
-  // Get pointer coordinates relative to canvas
+  // Get pointer coordinates relative to canvas safely
   const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>): Point | null => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0) return null;
 
-    let clientX = 0;
-    let clientY = 0;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
 
-    if ('touches' in e) {
-      if (e.touches.length === 0) return null;
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
+      let clientX = 0;
+      let clientY = 0;
+
+      if ('touches' in e) {
+        const touch = e.touches[0] || ('changedTouches' in e ? e.changedTouches[0] : null);
+        if (!touch) return null;
+        clientX = touch.clientX;
+        clientY = touch.clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      if (typeof clientX !== 'number' || typeof clientY !== 'number' || isNaN(clientX) || isNaN(clientY)) {
+        return null;
+      }
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY,
+        time: Date.now()
+      };
+    } catch {
+      return null;
     }
-
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
-      time: Date.now()
-    };
   };
 
   const handlePointerDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     const point = getCoordinates(e);
     if (!point) return;
 
-    setIsDrawing(true);
+    isDrawingRef.current = true;
     setHasDrawnNotice(true);
+
     const newStroke: Stroke = {
       points: [point],
       color: brushColor,
       size: brushSize,
       brushType: brushType
     };
+
     currentStrokeRef.current = newStroke;
-    setStrokes(prev => [...prev, newStroke]);
-    setRedoStrokes([]);
+    lastPointRef.current = point;
+
+    // Draw single dot on canvas directly (Zero delay, no React state trigger)
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.fillStyle = brushColor;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
   };
 
   const handlePointerMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !currentStrokeRef.current) return;
-    e.preventDefault();
+    if (!isDrawingRef.current || !currentStrokeRef.current || !lastPointRef.current) return;
+    if (e.cancelable) e.preventDefault();
+
     const point = getCoordinates(e);
     if (!point) return;
 
-    currentStrokeRef.current.points.push(point);
-    setStrokes(prev => {
-      const updated = [...prev];
-      updated[updated.length - 1] = { ...currentStrokeRef.current! };
-      return updated;
-    });
+    const p1 = lastPointRef.current;
+    const p2 = point;
+
+    // Append to current stroke in memory (NOT triggering React re-render per pixel!)
+    currentStrokeRef.current.points.push(p2);
+    lastPointRef.current = p2;
+
+    // Incremental direct 2D context draw - Instant 120fps smooth performance
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = brushColor;
+
+        if (brushType === 'ink') {
+          ctx.lineWidth = brushSize;
+        } else {
+          const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+          const time = Math.max(p2.time - p1.time, 1);
+          const speed = dist / time;
+          ctx.lineWidth = Math.max(brushSize * 0.45, Math.min(brushSize * 1.5, brushSize * (1.1 - speed * 0.3)));
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
   };
 
   const handlePointerUp = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    setIsDrawing(false);
+    if (!isDrawingRef.current) return;
+    if (e.cancelable) e.preventDefault();
+    isDrawingRef.current = false;
+
+    // Commit completed stroke to state ONCE when pen lifts
+    if (currentStrokeRef.current && currentStrokeRef.current.points.length > 0) {
+      const finishedStroke = { ...currentStrokeRef.current };
+      setStrokes(prev => [...prev, finishedStroke]);
+      setRedoStrokes([]);
+    }
+
     currentStrokeRef.current = null;
+    lastPointRef.current = null;
   };
 
   // Actions
@@ -281,6 +361,9 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
     speechService.playEffect('clear');
     setStrokes([]);
     setRedoStrokes([]);
+    currentStrokeRef.current = null;
+    lastPointRef.current = null;
+    isDrawingRef.current = false;
   };
 
   const handleUndo = () => {
@@ -298,55 +381,58 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
   };
 
   const handleDownload = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    // Create a temporary export canvas with elegant traditional border and seal
-    const exportCanvas = document.createElement('canvas');
-    const border = 40;
-    exportCanvas.width = canvas.width + border * 2;
-    exportCanvas.height = canvas.height + border * 2 + 50;
-    const ctx = exportCanvas.getContext('2d');
-    if (!ctx) return;
+      const exportCanvas = document.createElement('canvas');
+      const border = 40;
+      exportCanvas.width = canvas.width + border * 2;
+      exportCanvas.height = canvas.height + border * 2 + 50;
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) return;
 
-    // Background
-    ctx.fillStyle = '#F5F2EB';
-    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      // Background
+      ctx.fillStyle = '#F5F2EB';
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
-    // Frame
-    ctx.strokeStyle = '#8B2522';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(border - 10, border - 10, canvas.width + 20, canvas.height + 20);
+      // Frame
+      ctx.strokeStyle = '#8B2522';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(border - 10, border - 10, canvas.width + 20, canvas.height + 20);
 
-    // Draw main writing
-    ctx.drawImage(canvas, border, border);
+      // Draw main writing
+      ctx.drawImage(canvas, border, border);
 
-    // Footer signature / Student Name & Pinyin
-    ctx.fillStyle = '#44403C';
-    ctx.font = '600 15px "Plus Jakarta Sans", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`${studentName} · ${char} (${pinyin})`, border, exportCanvas.height - 24);
+      // Footer signature / Student Name & Pinyin
+      ctx.fillStyle = '#44403C';
+      ctx.font = '600 15px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${studentName} · ${char} (${pinyin})`, border, exportCanvas.height - 24);
 
-    // Traditional red seal emblem on bottom right
-    const sealX = exportCanvas.width - border - 46;
-    const sealY = exportCanvas.height - 48;
-    ctx.fillStyle = '#B91C1C';
-    ctx.fillRect(sealX, sealY, 36, 36);
-    ctx.strokeStyle = '#FEE2E2';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(sealX + 2, sealY + 2, 32, 32);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 16px "Noto Serif SC", serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('学', sealX + 18, sealY + 18);
+      // Traditional red seal emblem on bottom right
+      const sealX = exportCanvas.width - border - 46;
+      const sealY = exportCanvas.height - 48;
+      ctx.fillStyle = '#B91C1C';
+      ctx.fillRect(sealX, sealY, 36, 36);
+      ctx.strokeStyle = '#FEE2E2';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(sealX + 2, sealY + 2, 32, 32);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 16px "Noto Serif SC", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('学', sealX + 18, sealY + 18);
 
-    const dataUrl = exportCanvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `LuyenViet_${char}_${studentName.replace(/\s+/g, '_')}.png`;
-    a.click();
-    speechService.playEffect('bell');
+      const dataUrl = exportCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `LuyenViet_${char}_${studentName.replace(/\s+/g, '_')}.png`;
+      a.click();
+      speechService.playEffect('bell');
+    } catch (err) {
+      console.error('Download failed:', err);
+    }
   };
 
   return (
@@ -417,7 +503,10 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
           </div>
 
           {/* Canvas Wrapper */}
-          <div className="relative rounded-xl overflow-hidden shadow-inner border-2 border-stone-300 touch-none select-none bg-[#FCFAF6]">
+          <div 
+            className="relative rounded-xl overflow-hidden shadow-inner border-2 border-stone-300 select-none bg-[#FCFAF6]"
+            style={{ touchAction: 'none' }}
+          >
             <canvas
               ref={canvasRef}
               width={canvasDimensions.width}
@@ -429,10 +518,12 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
               onTouchStart={handlePointerDown}
               onTouchMove={handlePointerMove}
               onTouchEnd={handlePointerUp}
-              className="cursor-crosshair block touch-none"
+              onTouchCancel={handlePointerUp}
+              className="cursor-crosshair block"
               style={{
                 width: `${canvasDimensions.width}px`,
                 height: `${canvasDimensions.height}px`,
+                touchAction: 'none'
               }}
             />
 
@@ -446,7 +537,7 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
             )}
           </div>
 
-          {/* Primary Action Buttons: XÓA ĐI VIẾT LẠI, HOÀN TÁC, TẢI VỀ */}
+          {/* Action Buttons: XÓA ĐI VIẾT LẠI, HOÀN TÁC, TẢI VỀ */}
           <div className="w-full flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-stone-100">
             <div className="flex items-center gap-2">
               {/* PRIMARY: Xóa đi viết lại */}
@@ -620,7 +711,7 @@ export const CalligraphyCanvas: React.FC<CalligraphyCanvasProps> = ({
               </button>
             </div>
 
-            {/* Watermark Opacity Slider (When visible) */}
+            {/* Watermark Opacity Slider */}
             {showWatermark && (
               <div className="pt-2 border-t border-stone-100">
                 <div className="flex justify-between items-center text-xs text-stone-600 mb-1">
