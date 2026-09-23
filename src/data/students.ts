@@ -379,8 +379,8 @@ export const INITIAL_STUDENTS: Student[] = [
         strokeNames: ['Hoành', 'Hoành', 'Sổ', 'Hoành', 'Chấm']
       }
     ]
-  }
-];
+  },
+  {
 id: 'nguyen-minh-thai',
     vietnameseName: 'Nguyễn Minh Thái',
     chineseName: '阮明泰',
