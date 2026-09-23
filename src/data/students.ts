@@ -381,3 +381,39 @@ export const INITIAL_STUDENTS: Student[] = [
     ]
   }
 ];
+id: 'nguyen-minh-thai',
+    vietnameseName: 'Nguyễn Minh Thái',
+    chineseName: '阮明泰',
+    pinyin: 'Ruǎn Míngtài',
+    meaningSummary: 'Tấm lòng sáng suốt, thông tuệ, cuộc đời an thái, thịnh vượng và vững vàng như núi Thái Sơn.',
+    characters: [
+      {
+        char: '阮',
+        pinyin: 'Ruǎn',
+        hanViet: 'Nguyễn',
+        strokeCount: 7,
+        radical: '阝 (Phụ - Tai trái)',
+        meaning: 'Họ Nguyễn; tên một loại nhạc cụ gảy dây cổ truyền thanh nhã (Đàn Nguyễn).',
+        strokeNames: ['Hoành phẩy cong móc (横撇弯钩)', 'Sổ (竖)', 'Hoành (横)', 'Hoành (横)', 'Sổ (竖)', 'Phẩy (撇)', 'Chấm (点)']
+      },
+      {
+        char: '明',
+        pinyin: 'Míng',
+        hanViet: 'Minh',
+        strokeCount: 8,
+        radical: '日 (Nhật - Mặt trời)',
+        meaning: 'Quang minh, sáng sủa, thông minh đĩnh ngộ; kết hợp giữa Nhật (mặt trời) và Nguyệt (mặt trăng).',
+        strokeNames: ['Sổ (竖)', 'Hoành chiết (横折)', 'Hoành (横)', 'Hoành (横)', 'Phẩy (撇)', 'Hoành chiết câu (横折钩)', 'Hoành (横)', 'Hoành (横)']
+      },
+      {
+        char: '泰',
+        pinyin: 'Tài',
+        hanViet: 'Thái',
+        strokeCount: 10,
+        radical: '水 (Thủy - Nước)',
+        meaning: 'An thái, bình an, hanh thông, phúc lộc vững bền như núi Thái Sơn (Quẻ Địa Thiên Thái).',
+        strokeNames: ['Hoành (横)', 'Hoành (横)', 'Sổ (竖)', 'Phẩy (撇)', 'Mác (捺)', 'Sổ câu (竖钩)', 'Chấm (点)', 'Đề (hất - 提)', 'Phẩy (撇)', 'Chấm (点)']
+      }
+    ]
+  }
+];
