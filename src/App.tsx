@@ -38,7 +38,11 @@ export default function App() {
           const valid = parsed.filter(
             (s: unknown): s is Student => Boolean(s && typeof s === 'object' && Array.isArray((s as Student).characters) && (s as Student).characters.length > 0)
           );
-          if (valid.length > 0) return valid;
+          if (valid.length > 0) {
+            const existingIds = new Set(valid.map(s => s.id));
+            const missingInitial = INITIAL_STUDENTS.filter(s => !existingIds.has(s.id));
+            return [...valid, ...missingInitial];
+          }
         }
       }
     } catch {
