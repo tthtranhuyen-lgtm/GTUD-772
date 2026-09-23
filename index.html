@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Guard against iframe script injection trying to set window.fetch when it has only a getter
+      try {
+        let _activeFetch = window.fetch ? window.fetch.bind(window) : undefined;
+        Object.defineProperty(window, 'fetch', {
+          get: function() {
+            return _activeFetch;
+          },
+          set: function(newFetch) {
+            _activeFetch = newFetch;
+          },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (err) {
+        // Fallback if redefine fails
+      }
+    </script>
+    <title>Luyện Nghe & Viết Tên Chữ Hán - Học Viên</title>
+    <meta name="description" content="Ứng dụng luyện nghe phát âm chuẩn và tập viết chữ Hán cho tên học viên với điều chỉnh tốc độ và bảng viết xóa lại linh hoạt." />
+    <meta property="og:title" content="Luyện Nghe & Viết Tên Chữ Hán - Học Viên" />
+    <meta property="og:description" content="Ứng dụng luyện nghe phát âm chuẩn và tập viết chữ Hán cho tên học viên với điều chỉnh tốc độ và bảng viết xóa lại linh hoạt." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#F8F7F4] text-[#1C1917] antialiased selection:bg-[#B91C1C]/15 selection:text-[#991B1B]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

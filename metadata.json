@@ -1,0 +1,6 @@
+{
+  "name": "Luyện Nghe & Viết Tên Chữ Hán",
+  "description": "Ứng dụng luyện nghe phát âm chuẩn và tập viết chữ Hán cho tên học viên với điều chỉnh tốc độ và bảng viết xóa lại linh hoạt.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
