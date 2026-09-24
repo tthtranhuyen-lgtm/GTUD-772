@@ -28,21 +28,23 @@ import { AddStudentModal } from './components/AddStudentModal';
 import { speechService } from './utils/speech';
 
 export default function App() {
-  // Students state with localStorage hydration
+  // Students state with localStorage hydration (Always prioritizing latest INITIAL_STUDENTS updates)
   const [students, setStudents] = useState<Student[]>(() => {
     try {
       const saved = localStorage.getItem('chinese_name_students');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const valid = parsed.filter(
-            (s: unknown): s is Student => Boolean(s && typeof s === 'object' && Array.isArray((s as Student).characters) && (s as Student).characters.length > 0)
+          const initialMap = new Map(INITIAL_STUDENTS.map(s => [s.id, s]));
+          // Keep custom added students (those not in INITIAL_STUDENTS)
+          const customStudents = parsed.filter(
+            (s: unknown): s is Student => Boolean(
+              s && typeof s === 'object' && !initialMap.has((s as Student).id) &&
+              Array.isArray((s as Student).characters) && (s as Student).characters.length > 0
+            )
           );
-          if (valid.length > 0) {
-            const existingIds = new Set(valid.map(s => s.id));
-            const missingInitial = INITIAL_STUDENTS.filter(s => !existingIds.has(s.id));
-            return [...valid, ...missingInitial];
-          }
+          // Always use the latest version of INITIAL_STUDENTS, plus custom added students
+          return [...INITIAL_STUDENTS, ...customStudents];
         }
       }
     } catch {
@@ -69,11 +71,13 @@ export default function App() {
     }
   }, [students]);
 
-  // Fallback safe student to ensure characters is always a valid non-empty array
-  const safeStudent: Student = 
+  // Fallback safe student to ensure characters is always a valid non-empty array and synced with latest student data
+  const rawStudent = 
     (currentStudent && Array.isArray(currentStudent.characters) && currentStudent.characters.length > 0)
       ? currentStudent
       : (students && students.length > 0 && Array.isArray(students[0].characters) ? students[0] : INITIAL_STUDENTS[0]);
+
+  const safeStudent: Student = students.find(s => s.id === rawStudent.id) || rawStudent;
 
   const characters = safeStudent.characters || [];
   const currentCharData = characters[selectedCharIndex] || characters[0];

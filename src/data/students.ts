@@ -302,18 +302,18 @@ export const INITIAL_STUDENTS: Student[] = [
   {
     id: 'tran-tuan-hao',
     vietnameseName: 'Trần Tuấn Hào',
-    chineseName: '陈俊豪',
-    pinyin: 'Chén Jùnháo',
-    meaningSummary: 'Người tuấn kiệt tài ba, chí khí hào hiệp, đĩnh đạc và trượng nghĩa.',
+    chineseName: '陈俊浩',
+    pinyin: 'Chén Jùnhào',
+    meaningSummary: 'Người tuấn tú tài ba, chí khí hạo nhiên rộng lớn như biển khơi, tấm lòng khoáng đạt và cương trực.',
     characters: [
       {
         char: '陈',
         pinyin: 'Chén',
         hanViet: 'Trần',
         strokeCount: 7,
-        radical: '阝 (Phụ)',
-        meaning: 'Họ Trần; bày tỏ, trải rộng, một trong các họ lớn lừng lẫy.',
-        strokeNames: ['Hoành phẩy cong móc', 'Sổ', 'Hoành', 'Hoành', 'Phẩy', 'Sổ chiết chiết câu', 'Sổ']
+        radical: '阝 (Phụ - Tai trái)',
+        meaning: 'Họ Trần; bày tỏ, trải rộng, một trong các dòng họ danh giá lẫy lừng.',
+        strokeNames: ['Hoành phẩy cong móc (横撇弯钩)', 'Sổ (竖)', 'Hoành (横)', 'Hoành (横)', 'Phẩy (撇)', 'Sổ chiết chiết câu (竖折折钩)', 'Sổ (竖)']
       },
       {
         char: '俊',
@@ -321,17 +321,17 @@ export const INITIAL_STUDENTS: Student[] = [
         hanViet: 'Tuấn',
         strokeCount: 9,
         radical: '亻 (Nhân đứng)',
-        meaning: 'Tuấn tú, tài giỏi xuất chúng, khí chất ngời sáng.',
-        strokeNames: ['Phẩy', 'Sổ', 'Chấm', 'Hoành', 'Phẩy', 'Chấm', 'Phẩy', 'Hoành phẩy', 'Mác']
+        meaning: 'Tuấn tú, tài giỏi xuất chúng, cốt cách ngời sáng đĩnh đạc.',
+        strokeNames: ['Phẩy (撇)', 'Sổ (竖)', 'Chấm (点)', 'Hoành (横)', 'Phẩy (撇)', 'Chấm (点)', 'Phẩy (撇)', 'Hoành phẩy (横撇)', 'Mác (捺)']
       },
       {
-        char: '豪',
-        pinyin: 'Háo',
+        char: '浩',
+        pinyin: 'Hào',
         hanViet: 'Hào',
-        strokeCount: 14,
-        radical: '豕 (Thỉ)',
-        meaning: 'Hào kiệt, hào hiệp trượng nghĩa, phóng khoáng can trường.',
-        strokeNames: ['Chấm', 'Hoành', 'Khẩu (sổ, hoành chiết, hoành)', 'Hoành', 'Phẩy', 'Loan câu', 'Phẩy', 'Phẩy', 'Phẩy', 'Mác']
+        strokeCount: 10,
+        radical: '氵 (Thủy - Nước)',
+        meaning: 'Mênh mông, rộng lớn như sóng nước bao la; ngụ ý tấm lòng khoáng đạt, chí khí hạo nhiên (浩然之气).',
+        strokeNames: ['Chấm (点)', 'Chấm (点)', 'Đề / Hất (提)', 'Phẩy (撇)', 'Hoành (横)', 'Sổ (竖)', 'Hoành (横)', 'Sổ (竖)', 'Hoành chiết (横折)', 'Hoành (横)']
       }
     ]
   },
@@ -381,7 +381,7 @@ export const INITIAL_STUDENTS: Student[] = [
     ]
   },
   {
-id: 'nguyen-minh-thai',
+    id: 'nguyen-minh-thai',
     vietnameseName: 'Nguyễn Minh Thái',
     chineseName: '阮明泰',
     pinyin: 'Ruǎn Míngtài',
