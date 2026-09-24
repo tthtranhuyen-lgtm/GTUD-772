@@ -68,7 +68,7 @@ export const INITIAL_STUDENTS: Student[] = [
         pinyin: 'Ruǎn',
         hanViet: 'Nguyễn',
         strokeCount: 7,
-        radical: '阝 (Phụ - Tai trái)',
+        radical: '阝 (Phụ)',
         meaning: 'Họ Nguyễn; tên một loại nhạc cụ cổ truyền tao nhã (Đàn Nguyễn).',
         strokeNames: ['Hoành phẩy cong móc (横撇弯钩)', 'Sổ (竖)', 'Hoành (横)', 'Hoành (横)', 'Sổ (竖)', 'Phẩy (撇)', 'Chấm (点)']
       },
@@ -311,7 +311,7 @@ export const INITIAL_STUDENTS: Student[] = [
         pinyin: 'Chén',
         hanViet: 'Trần',
         strokeCount: 7,
-        radical: '阝 (Phụ - Tai trái)',
+        radical: '阝 (Phụ)',
         meaning: 'Họ Trần; bày tỏ, trải rộng, một trong các dòng họ danh giá lẫy lừng.',
         strokeNames: ['Hoành phẩy cong móc (横撇弯钩)', 'Sổ (竖)', 'Hoành (横)', 'Hoành (横)', 'Phẩy (撇)', 'Sổ chiết chiết câu (竖折折钩)', 'Sổ (竖)']
       },
@@ -392,7 +392,7 @@ export const INITIAL_STUDENTS: Student[] = [
         pinyin: 'Ruǎn',
         hanViet: 'Nguyễn',
         strokeCount: 7,
-        radical: '阝 (Phụ - Tai trái)',
+        radical: '阝 (Phụ)',
         meaning: 'Họ Nguyễn; tên một loại nhạc cụ gảy dây cổ truyền thanh nhã (Đàn Nguyễn).',
         strokeNames: ['Hoành phẩy cong móc (横撇弯钩)', 'Sổ (竖)', 'Hoành (横)', 'Hoành (横)', 'Sổ (竖)', 'Phẩy (撇)', 'Chấm (点)']
       },
